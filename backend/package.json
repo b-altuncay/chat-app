@@ -1,0 +1,50 @@
+{
+  "name": "chat-app-backend",
+  "version": "1.0.0",
+  "description": "Real-time chat application backend with Node.js, Express, Socket.io",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write src/"
+  },
+  "keywords": ["chat", "socket.io", "nodejs", "express", "mongodb", "real-time"],
+  "author": "Chat App Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4",
+    "mongoose": "^8.0.3",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "multer": "^1.4.5-lts.1",
+    "dotenv": "^16.3.1",
+    "joi": "^17.11.0",
+    "compression": "^1.7.4",
+    "express-mongo-sanitize": "^2.2.0",
+    "xss": "^1.0.14",
+    "winston": "^3.11.0",
+    "morgan": "^1.10.0",
+    "amqplib": "^0.10.3",
+    "ioredis": "^5.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

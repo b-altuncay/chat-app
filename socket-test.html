@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket Debug Test</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>🔍 Socket Debug Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+
+    <script>
+        console.log('🔌 Starting socket connection...');
+        
+        // Test 1: Token'sız bağlantı
+        const socket1 = io('http://localhost:5000', {
+            forceNew: true
+        });
+
+        socket1.on('connect', () => {
+            console.log('✅ Connected WITHOUT token');
+            document.getElementById('status').innerHTML = '✅ Connected WITHOUT token';
+            document.getElementById('messages').innerHTML += '<div>✅ Token\'sız bağlantı başarılı!</div>';
+        });
+
+        socket1.on('connect_error', (error) => {
+            console.log('❌ Connection error (no token):', error);
+            document.getElementById('messages').innerHTML += '<div>❌ Token\'sız bağlantı hatası: ' + error.message + '</div>';
+            
+            // Test 2: Token'lı bağlantı
+            console.log('🔌 Trying with token...');
+            const socket2 = io('http://localhost:5000', {
+                auth: { 
+                    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODc0M2IxNTc0MzgzOTZiMmVkYjNmZjEiLCJ1c2VybmFtZSI6Im5ld3VzZXIiLCJlbWFpbCI6Im5ld0B0ZXN0LmNvbSIsImlhdCI6MTc1MjQ0Nzc2NSwiZXhwIjoxNzUzMDUyNTY1LCJhdWQiOiJjaGF0LWFwcC11c2VycyIsImlzcyI6ImNoYXQtYXBwIn0.pulDY_7eeoL0njrPH40OkBLnjNmTRuC4mTdHEA1pU7E'
+                },
+                forceNew: true
+            });
+
+            socket2.on('connect', () => {
+                console.log('✅ Connected WITH token');
+                document.getElementById('status').innerHTML = '✅ Connected WITH token';
+                document.getElementById('messages').innerHTML += '<div>✅ Token\'lı bağlantı başarılı!</div>';
+            });
+
+            socket2.on('connect_error', (error) => {
+                console.log('❌ Connection error (with token):', error);
+                document.getElementById('messages').innerHTML += '<div>❌ Token\'lı bağlantı hatası: ' + error.message + '</div>';
+            });
+        });
+
+        socket1.on('disconnect', (reason) => {
+            console.log('❌ Disconnected:', reason);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production builds
+build/
+dist/
+*/build/
+*/dist/
+
+# Environment variables
+.env
+*/.env
+.env.local
+*/.env.local
+
+# Logs
+*.log
+logs/
+*/logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Flutter
+mobile-client/.dart_tool/
+mobile-client/.packages
+mobile-client/pubspec.lock
+mobile-client/ios/
+mobile-client/android/
+mobile-client/build/
+
+# Uploads
+uploads/
+*/uploads/
