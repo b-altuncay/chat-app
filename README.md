@@ -23,7 +23,6 @@ Modern, scalable chat application with Node.js, React, and Flutter.
 chat-app/
 ├── backend/          # Node.js backend API
 ├── web-client/       # React web application
-├── mobile-client/    # Flutter mobile app
 └── shared/          # Shared types and configs
 ```
 
