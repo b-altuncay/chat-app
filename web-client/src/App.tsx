@@ -9,13 +9,16 @@ import { useChatStore } from './store/chatStore';
 import { ChatList } from './components/Sidebar/ChatList';
 import { MessageList } from './components/Chat/MessageList';
 import MessageInput from './components/Chat/MessageInput';
+import { NewChatModal } from './components/Sidebar/NewChatModal';
+import { DemoBanner } from './components/common/DemoBanner';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import { useNavigate } from 'react-router-dom'
 
 
 const App: React.FC = () => {
   const { user, isLoading, login, logout, initializeAuth } = useAuthStore();
-  const { 
+  const {
     chats, 
     activeChat, 
     messages, 
@@ -33,7 +36,7 @@ const App: React.FC = () => {
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
-
+  const navigate = useNavigate();
   // App initialization
   useEffect(() => {
     const initApp = async () => {
@@ -72,22 +75,21 @@ const App: React.FC = () => {
   }, [user?.token, loadChats, setupSocketListeners, cleanupSocketListeners]);
 
   // Handle user search
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (query.length > 0) {
-      try {
-        const { searchUsers } = useChatStore.getState();
-        const response = await searchUsers(query);
-        setSearchResults(response.data || []);
-      } catch (error) {
-        console.error('Search failed:', error);
-        setSearchResults([]);
-      }
-    } else {
+const handleSearch = async (query: string) => {
+  setSearchQuery(query);
+  if (query.length > 0) {
+    try {
+      const { searchUsers } = useChatStore.getState(); // 🔥 Burası önemli
+      const response = await searchUsers(query);
+      setSearchResults(response.data || []);
+    } catch (error) {
+      console.error('Search failed:', error);
       setSearchResults([]);
     }
-  };
-
+  } else {
+    setSearchResults([]);
+  }
+};
   // Handle chat creation
   const handleCreateChat = async (targetUserId: string) => {
     try {
@@ -101,11 +103,11 @@ const App: React.FC = () => {
   };
 
 const handleSwitchToRegister = () => {
-  window.location.href = '/register';
+  navigate('/register');
 };
 
 const handleSwitchToLogin = () => {
-  window.location.href = '/login';
+  navigate('/login');
 };
 
   // Handle message send
@@ -133,21 +135,20 @@ const handleSwitchToLogin = () => {
   }
 
   // If user is not authenticated, show auth pages
-  if (!user) {
+  if (!user || !user.token) {
     return (
-      <Router>
         <Routes>
           <Route path="/login" element={<Login onSwitchToRegister={handleSwitchToRegister} />} />
           <Route path="/register" element={<Register onSwitchToLogin={handleSwitchToLogin} />} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
-      </Router>
     );
   }
 
   // Main chat interface
   return (
     <div style={{ height: '100vh', overflow: 'hidden' }}>
+      <DemoBanner />
       <div style={{ display: 'flex', height: '100vh', background: '#111b21' }}>
         {/* Sol taraf - WhatsApp ChatList */}
         <div style={{ 
@@ -163,6 +164,13 @@ const handleSwitchToLogin = () => {
             currentUser={user}
             onSelectChat={selectChat}
             onlineUsers={onlineUsers}
+            onSearchUsers={async (query) => {
+              const { searchUsers } = useChatStore.getState();
+              const res = await searchUsers(query);
+              return res.data;
+            }}
+            onCreateChat={handleCreateChat}
+            onLogout={logout}
           />
         </div>
 
@@ -325,10 +333,10 @@ const handleSwitchToLogin = () => {
             }}>
               <div style={{ textAlign: 'center', opacity: 0.6 }}>
                 <div style={{ fontSize: '80px', marginBottom: '20px', opacity: 0.3 }}>💬</div>
-                <div style={{ fontSize: '32px', fontWeight: 300, marginBottom: '10px' }}>WhatsApp Web</div>
+                <div style={{ fontSize: '32px', fontWeight: 300, marginBottom: '10px' }}>ChatApp Web</div>
                 <div style={{ fontSize: '14px', lineHeight: '20px', maxWidth: '360px' }}>
                   Send and receive messages without keeping your phone online.<br/>
-                  Use WhatsApp on up to 4 linked devices and 1 phone at the same time.
+                  Use ChatApp on up to 4 linked devices and 1 phone at the same time.
                 </div>
               </div>
             </div>
@@ -438,6 +446,18 @@ const handleSwitchToLogin = () => {
           </div>
         </div>
       )}
+
+     <NewChatModal
+        show={showNewChatModal}
+        onHide={() => setShowNewChatModal(false)}
+        onSearchUsers={async (query) => {
+          const { searchUsers } = useChatStore.getState();
+          const res = await searchUsers(query);
+          return res.data;
+        }}
+        onCreateChat={handleCreateChat}
+        isSearching={false}
+      />
     </div>
   );
 };

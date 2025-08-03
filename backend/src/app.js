@@ -8,7 +8,8 @@ const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss');
 const path = require('path');
-
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./docs/swagger');
 const app = express();
 
 // Trust proxy for rate limiting
@@ -30,7 +31,7 @@ app.use(helmet({
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+    const allowedOrigins = process.env.CORS_ORIGIN?.split(',') .map(origin => origin.trim()) || ['http://localhost:3000'];
     
     // Allow requests with no origin (mobile apps, postman, etc.)
     if (!origin) return callback(null, true);
@@ -99,7 +100,7 @@ app.post('/api/test/delivered/:messageId', async (req, res) => {
     const Message = require('./models/Message');
     const { messageId } = req.params;
     
-    console.log(`🧪 Testing delivered for message: ${messageId}`);
+    console.log(`Testing delivered for message: ${messageId}`);
     
     const message = await Message.findByIdAndUpdate(
       messageId,
@@ -119,18 +120,20 @@ app.post('/api/test/delivered/:messageId', async (req, res) => {
         status: 'delivered',
         deliveredAt: message.deliveredAt
       });
-      console.log(`📡 Broadcasted delivered status for ${messageId.slice(-6)}`);
+      console.log(`Broadcasted delivered status for ${messageId.slice(-6)}`);
     } else {
-      console.log('⚠️ Socket.io not available');
+      console.log('Socket.io not available');
     }
     
-    console.log(`✅ Manual delivered: ${messageId.slice(-6)}`);
+    console.log(`Manual delivered: ${messageId.slice(-6)}`);
     res.json({ success: true, message: { status: message.status } });
   } catch (error) {
     console.error('Test delivered error:', error);
     res.json({ success: false, error: error.message });
   }
 });
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // API routes
 app.use('/api/auth', require('./routes/auth'));

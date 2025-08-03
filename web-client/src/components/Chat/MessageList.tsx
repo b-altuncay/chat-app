@@ -1,5 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useChatStore } from '../../store/chatStore';
+import { ContextMenu } from './ContextMenu';
+import { getHiddenMessages, addHiddenMessage } from '../../utils/hiddenMessages';
 
 interface Message {
   _id: string;
@@ -38,6 +40,17 @@ export const MessageList: React.FC<MessageListProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeChat = useChatStore(state => state.activeChat);
   const markMessagesAsRead = useChatStore(state => state.markMessagesAsRead);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageId: string } | null>(null);
+  const [hiddenMessages, setHiddenMessages] = useState<string[]>([]);
+  const visibleMessages = messages.filter(msg => !hiddenMessages.includes(msg._id));
+
+
+  useEffect(() => {
+    if (activeChat?._id) {
+      const hidden = getHiddenMessages(activeChat._id);
+      setHiddenMessages(hidden);
+    }
+  }, [activeChat?._id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -145,7 +158,7 @@ export const MessageList: React.FC<MessageListProps> = ({
       position: 'relative'
     }}>
       
-      {messages.map((message, index) => {
+      {visibleMessages.map((message, index) => {
         const isMe = message.sender._id === currentUser?._id;
         const prevMessage = messages[index - 1];
         const nextMessage = messages[index + 1];
@@ -170,10 +183,10 @@ export const MessageList: React.FC<MessageListProps> = ({
                 minWidth: '48px',
                 position: 'relative'
               }}
-              onContextMenu={(e) => {
+            onContextMenu={(e) => {
                 e.preventDefault();
-                if (isMe && onDeleteMessage && !message.isDeleted) {
-                  onDeleteMessage(message._id);
+                if (isMe && !message.isDeleted) {
+                  setContextMenu({ x: e.clientX, y: e.clientY, messageId: message._id });
                 }
               }}
             >
@@ -280,6 +293,22 @@ export const MessageList: React.FC<MessageListProps> = ({
           </div>
         </div>
       )}
+
+            {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onDelete={() => {
+              if (onDeleteMessage && activeChat?._id) {
+                addHiddenMessage(activeChat._id, contextMenu.messageId); // localStorage’a kaydet
+                onDeleteMessage(contextMenu.messageId);                  // mesajı sil
+                setHiddenMessages(prev => [...prev, contextMenu.messageId]); // render’dan çıkar
+              }
+              setContextMenu(null); // Menü kapanır
+            }}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
 
       <div ref={messagesEndRef} />
     </div>

@@ -17,6 +17,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
     clearError();
     try {
       await login({ email, password });
+      window.location.href = '/';
     } catch (error) {
       console.error('Login failed:', error);
     }

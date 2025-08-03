@@ -44,7 +44,8 @@ class AuthController {
       const user = new User({
         username,
         email,
-        password: hashedPassword
+        password: hashedPassword,
+        type: 'user'
       });
 
       await user.save();
@@ -76,7 +77,8 @@ class AuthController {
       res.status(201).json({
         success: true,
         message: 'User registered successfully',
-        data: userResponse
+        data: userResponse,
+        type: user.type
       });
 
     } catch (error) {
@@ -93,15 +95,15 @@ class AuthController {
     try {
       const { email, password } = req.body;
 
-      console.log('🔍 Login attempt:', { email, password }); // DEBUG
+      console.log('Login attempt:', { email, password }); // DEBUG
 
       // Find user with password field
       const user = await User.findOne({ email }).select('+password +refreshToken');
 
-      console.log('👤 User found:', !!user); // DEBUG
+      console.log('User found:', !!user); // DEBUG
       if (user) {
-        console.log('📧 User email:', user.email);
-        console.log('🔐 Has password:', !!user.password);
+        console.log('User email:', user.email);
+        console.log('Has password:', !!user.password);
       }
 
       if (!user) {
@@ -112,9 +114,9 @@ class AuthController {
       }
 
       // Check password
-      console.log('🔍 Comparing passwords...'); // DEBUG
+      console.log('Comparing passwords...'); // DEBUG
       const isPasswordValid = await passwordUtils.comparePassword(password, user.password);
-      console.log('✅ Password valid:', isPasswordValid); // DEBUG
+      console.log('Password valid:', isPasswordValid); // DEBUG
 
       if (!isPasswordValid) {
         return res.status(401).json({
@@ -149,7 +151,8 @@ class AuthController {
       res.status(200).json({
         success: true,
         message: 'Login successful',
-        data: userResponse
+        data: userResponse,
+        type: user.type
       });
 
     } catch (error) {

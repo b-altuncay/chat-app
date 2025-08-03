@@ -25,16 +25,16 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('✅ Connected to socket server');
+      console.log('Connected to socket server');
       this.reconnectAttempts = 0;
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('❌ Disconnected from socket server:', reason);
+      console.log('Disconnected from socket server:', reason);
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('🔌 Socket connection error:', error);
+      console.error('Socket connection error:', error);
       this.reconnectAttempts++;
       
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -43,7 +43,7 @@ class SocketService {
     });
 
     this.socket.on('error', (error) => {
-      console.error('🔌 Socket error:', error);
+      console.error('Socket error:', error);
     });
   }
 

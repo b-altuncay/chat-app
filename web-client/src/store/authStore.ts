@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(response.message || 'Login failed');
           }
         } catch (error: any) {
-          console.error('❌ Login error:', error);
+          console.error('Login error:', error);
           set({ 
             error: error.message || 'Login failed', 
             isLoading: false,
@@ -94,7 +94,7 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(response.message || 'Registration failed');
           }
         } catch (error: any) {
-          console.error('❌ Registration error:', error);
+          console.error('Registration error:', error);
           set({ 
             error: error.message || 'Registration failed', 
             isLoading: false,
@@ -145,7 +145,7 @@ export const useAuthStore = create<AuthState>()(
           } else {
           }
         } catch (error) {
-          console.error('❌ Failed to initialize auth:', error);
+          console.error('Failed to initialize auth:', error);
           // Clear invalid data
           localStorage.removeItem('token');
           localStorage.removeItem('user');

@@ -3,6 +3,7 @@ const { authenticateSocket } = require('../middleware/auth');
 const User = require('../models/User');
 const Chat = require('../models/Chat');
 const Message = require('../models/Message');
+const { sendToQueue } = require('../services/rabbitmq');
 
 class SocketHandler {
   constructor(io) {
@@ -17,16 +18,16 @@ class SocketHandler {
     this.io.use(authenticateSocket);
 
     this.io.on('connection', (socket) => {
-      console.log(`🔌 User connected: ${socket.id}`);
-      console.log(`👤 Authenticated user: ${socket.user.username} (${socket.user.userId})`);
+      console.log(`User connected: ${socket.id}`);
+      console.log(`Authenticated user: ${socket.user.username} (${socket.user.userId})`);
       
       this.handleUserConnection(socket);
       this.setupSocketEvents(socket);
       
-      console.log(`✅ Socket ${socket.id} ready for ${socket.user.username}`);
+      console.log(`Socket ${socket.id} ready for ${socket.user.username}`);
     });
 
-    console.log('🔌 Socket.io handler initialized with AUTHENTICATION');
+    console.log('Socket.io handler initialized with AUTHENTICATION');
   }
 
   async handleUserConnection(socket) {
@@ -48,7 +49,7 @@ class SocketHandler {
       await this.broadcastUserStatus(userId, true);
       await this.sendOnlineUsersList(socket);
 
-      console.log(`✅ User ${username} is now online`);
+      console.log(`User ${username} is now online`);
     } catch (error) {
       console.error('Error handling user connection:', error);
     }
@@ -76,7 +77,7 @@ class SocketHandler {
             deliveredAt: message.deliveredAt
           });
 
-          console.log(`📨 Delivered pending message ${message._id.toString().slice(-6)} to ${userId}`);
+          console.log(`Delivered pending message ${message._id.toString().slice(-6)} to ${userId}`);
         }
       }
     } catch (error) {
@@ -90,7 +91,7 @@ class SocketHandler {
       
       userChats.forEach(chat => {
         socket.join(chat._id.toString());
-        console.log(`📱 User ${socket.user.username} joined chat room: ${chat._id}`);
+        console.log(`User ${socket.user.username} joined chat room: ${chat._id}`);
       });
     } catch (error) {
       console.error('Error joining user chats:', error);
@@ -154,7 +155,7 @@ class SocketHandler {
     const userId = socket.user.userId;
 
     socket.on('test_message', (data) => {
-      console.log(`📧 Test message from ${socket.user.username}:`, data);
+      console.log(`Test message from ${socket.user.username}:`, data);
       socket.emit('test_response', {
         message: 'Hello from server!',
         timestamp: new Date(),
@@ -167,10 +168,10 @@ class SocketHandler {
         const chat = await Chat.findById(chatId);
         if (chat && chat.participants.some(p => p.toString() === userId)) {
           socket.join(chatId);
-          console.log(`🏠 ${socket.user.username} joined chat room: ${chatId}`);
+          console.log(`${socket.user.username} joined chat room: ${chatId}`);
           socket.emit('joined_room', { chatId, success: true });
         } else {
-          console.log(`❌ Access denied for ${socket.user.username} to chat ${chatId}`);
+          console.log(`Access denied for ${socket.user.username} to chat ${chatId}`);
           socket.emit('error', { message: 'Cannot join chat: Access denied' });
         }
       } catch (error) {
@@ -181,16 +182,16 @@ class SocketHandler {
 
     socket.on('leave_room', (chatId) => {
       socket.leave(chatId);
-      console.log(`🚪 ${socket.user.username} left chat room: ${chatId}`);
+      console.log(`${socket.user.username} left chat room: ${chatId}`);
       socket.emit('left_room', { chatId, success: true });
     });
 
     // SEND MESSAGE WITH AUTO-DELIVERED
     socket.on('send_message', async (data) => {
-      console.log('🔥 SEND_MESSAGE EVENT TRIGGERED!');
+      console.log('SEND_MESSAGE EVENT TRIGGERED!');
       try {
         const { chatId, content, messageType = 'text', replyTo } = data;
-        console.log('🔥 Data received:', { chatId, content, messageType });
+        console.log('Data received:', { chatId, content, messageType });
         
         const chat = await Chat.findById(chatId);
         if (!chat || !chat.participants.includes(userId)) {
@@ -198,7 +199,7 @@ class SocketHandler {
           return;
         }
         
-        console.log('🔥 Chat found, creating message...');
+        console.log('Chat found, creating message...');
 
         const messageData = {
           content,
@@ -215,18 +216,29 @@ class SocketHandler {
           await message.populate('replyTo', 'content sender');
         }
 
-        console.log('🔥 Message saved, updating chat...');
+        console.log('Message saved, updating chat...');
 
         await Chat.findByIdAndUpdate(chatId, {
           lastMessage: message._id,
           lastActivity: new Date()
         });
 
-        console.log('🔥 Broadcasting message...');
+        await sendToQueue({
+        type: 'NEW_MESSAGE',
+        chatId,
+        senderId: userId,
+        senderUsername: socket.user.username,
+        content,
+        messageType,
+        timestamp: new Date().toISOString(),
+        messageId: message._id.toString()
+        });
+
+        console.log('Broadcasting message...');
 
         // Broadcast message to all participants
-        console.log(`📡 Broadcasting to room: ${chatId}`);
-        console.log(`📡 Room participants: ${chat.participants.length}`);
+        console.log(`Broadcasting to room: ${chatId}`);
+        console.log(`Room participants: ${chat.participants.length}`);
         
         socket.to(chatId).emit('message_received', {
           _id: message._id,
@@ -257,24 +269,24 @@ class SocketHandler {
           status: message.status
         });
 
-        console.log(`💬 Message sent in chat ${chatId} by ${socket.user.username}`);
+        console.log(`Message sent in chat ${chatId} by ${socket.user.username}`);
 
         // AUTO-DELIVERED LOGIC
-        console.log('🧪 About to set timeout...');
+        console.log('About to set timeout...');
         const messageId = message._id;
         const chatParticipants = chat.participants;
         
         setTimeout(async () => {
-          console.log('✅ TIMEOUT TRIGGERED!');
+          console.log('TIMEOUT TRIGGERED!');
           try {
             const otherParticipants = chatParticipants.filter(p => p.toString() !== userId);
             let hasOnlineRecipient = false;
             
-            console.log(`🔍 Checking ${otherParticipants.length} other participants...`);
+            console.log(`Checking ${otherParticipants.length} other participants...`);
             
             otherParticipants.forEach(participantId => {
               const isOnline = this.onlineUsers.has(participantId.toString());
-              console.log(`👤 Participant ${participantId.toString().slice(-6)}: ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+              console.log(`Participant ${participantId.toString().slice(-6)}: ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
               if (isOnline) {
                 hasOnlineRecipient = true;
               }
@@ -287,7 +299,7 @@ class SocketHandler {
                 messageToUpdate.deliveredAt = new Date();
                 await messageToUpdate.save();
                 
-                console.log(`📨 Message ${messageId.toString().slice(-6)} auto-delivered (recipient online)`);
+                console.log(`Message ${messageId.toString().slice(-6)} auto-delivered (recipient online)`);
                 
                 this.io.to(chatId).emit('message_status_updated', {
                   messageId: messageId,
@@ -295,10 +307,10 @@ class SocketHandler {
                   deliveredAt: messageToUpdate.deliveredAt
                 });
                 
-                console.log(`📡 Broadcasted delivered status to chat ${chatId.slice(-6)}`);
+                console.log(`Broadcasted delivered status to chat ${chatId.slice(-6)}`);
               }
             } else {
-              console.log(`⏸️ Message ${messageId.toString().slice(-6)} stays SENT (no online recipients)`);
+              console.log(`Message ${messageId.toString().slice(-6)} stays SENT (no online recipients)`);
             }
           } catch (error) {
             console.error('Auto-delivered error:', error);
@@ -306,7 +318,7 @@ class SocketHandler {
         }, 2000); // 2 saniye bekle
 
       } catch (error) {
-        console.error('🔥 ERROR IN SEND_MESSAGE:', error);
+        console.error('ERROR IN SEND_MESSAGE:', error);
         socket.emit('error', { message: 'Error sending message' });
       }
     });
@@ -380,10 +392,10 @@ class SocketHandler {
             readAt: message.readAt
           });
           
-          console.log(`📖 Message ${message._id.toString().slice(-6)} marked as READ by ${socket.user.username}`);
+          console.log(`Message ${message._id.toString().slice(-6)} marked as READ by ${socket.user.username}`);
         }
 
-        console.log(`📖 Marked ${markedCount} messages as read in chat ${chatId}`);
+        console.log(`Marked ${markedCount} messages as read in chat ${chatId}`);
         socket.emit('marked_read', { chatId, markedCount });
 
       } catch (error) {
@@ -407,7 +419,7 @@ class SocketHandler {
     if (!userId) return;
 
     try {
-      console.log(`❌ User disconnected: ${username} (${socket.id}), reason: ${reason}`);
+      console.log(`User disconnected: ${username} (${socket.id}), reason: ${reason}`);
 
       this.onlineUsers.delete(userId);
       this.userSockets.delete(socket.id);
@@ -432,7 +444,7 @@ class SocketHandler {
 
       await this.broadcastUserStatus(userId, false);
 
-      console.log(`📴 ${username} is now offline`);
+      console.log(`${username} is now offline`);
     } catch (error) {
       console.error('Error handling user disconnection:', error);
     }

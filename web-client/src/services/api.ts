@@ -43,7 +43,7 @@ class ApiService {
 
       return data;
     } catch (error) {
-      console.error(`❌ API Error:`, error);
+      console.error(`API Error:`, error);
       throw error;
     }
   }
@@ -75,6 +75,7 @@ class ApiService {
 
   // User endpoints
   async searchUsers(query: string): Promise<ApiResponse<any[]>> {
+    console.log("API’ye arama isteği gönderiliyor:", query);
     return this.makeRequest<any[]>(`/users/search?q=${encodeURIComponent(query)}`);
   }
 

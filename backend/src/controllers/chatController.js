@@ -276,6 +276,13 @@ class ChatController {
         success: false,
         message: 'Internal server error while sending message'
       });
+
+      const { sendToQueue } = require('../services/rabbitmq');
+
+      await sendToQueue({
+        type: 'NEW_MESSAGE',
+        message: savedMessage, // ya da istediğin data yapısı
+      });
     }
   }
 
