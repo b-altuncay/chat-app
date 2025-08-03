@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Chat App - Real-time Messaging Application
 
 Modern, scalable chat application with Node.js and React.
@@ -21,7 +20,6 @@ Modern, scalable chat application with Node.js and React.
 chat-app/
 ├── backend/          # Node.js backend API
 ├── web-client/       # React web application
-└── shared/          # Shared types and configs
 ```
 
 ## Getting Started
