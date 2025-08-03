@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Chat App - Real-time Messaging Application
 
 Modern, scalable chat application with Node.js, React, and Flutter.
@@ -48,3 +49,6 @@ cd web-client && npm start
 # Start mobile client
 cd mobile-client && flutter run
 ```
+=======
+# chat-app
+>>>>>>> e428116423a2747235881c41958db7be12520efd
